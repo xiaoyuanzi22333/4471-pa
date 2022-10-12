@@ -47,6 +47,10 @@ class TwoLayerNet(object):
         # weights and biases using the keys 'W1' and 'b1' and second layer weights #
         # and biases using the keys 'W2' and 'b2'.                                 #
         ############################################################################
+        self.params['W1'] = weight_scale*np.random.randn(input_dim,hidden_dim)
+        self.params['W2'] = weight_scale*np.random.randn(hidden_dim,num_classes)
+        self.params['b1'] = weight_scale*np.zeros(hidden_dim)
+        self.params['b2'] = weight_scale*np.zeros(num_classes)
         pass
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -77,6 +81,9 @@ class TwoLayerNet(object):
         # TODO: Implement the forward pass for the two-layer net, computing the    #
         # class scores for X and storing them in the scores variable.              #
         ############################################################################
+        scores_1 = np.dot(X.reshape(X.shape[0],-1),self.params['W1']) + self.params['b1']
+        activation = np.maximum(0,scores_1)
+        scores = np.dot(activation,self.params['W2']) + self.params['b2']
         pass
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -97,6 +104,38 @@ class TwoLayerNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
+        W1 = self.params['W1']
+        W2 = self.params['W2']
+        b1 = self.params['b1']
+        b2 = self.params['b2']
+        reg = self.reg
+
+        exp = np.exp(scores)
+        exp_log = np.log(np.sum(exp,axis = 1))
+        sub_sum = np.sum(scores[range(X.reshape(X.shape[0],-1).shape[0]),y])
+        loss = (np.sum(exp_log) - sub_sum)/X.reshape(X.shape[0],-1).shape[0]
+        loss = loss + reg*np.sum(W1*W1)/2 + reg*np.sum(W2*W2)/2
+
+        suum = np.sum(exp,axis = 1)
+        cof = np.array(exp/np.matrix(suum).T)
+        cof[range(X.reshape(X.shape[0],-1).shape[0]),y] -= 1
+        cof /= X.reshape(X.shape[0],-1).shape[0]
+
+        grads["W2"] = np.dot(scores_1.T,cof)
+        grads["W2"] += reg*W2
+        grads['b2'] = np.sum(cof, axis=0)
+
+        grad1re = np.dot(cof,W2.T)
+        mode = np.zeros(scores_1.shape)
+        mode[scores_1 > 0] = 1
+        grads2 = grad1re*mode
+
+
+        
+        grads["W1"] = np.dot(X.reshape(X.shape[0],-1).T,grads2)
+        print(grads['W1'].shape)
+        grads["W1"] += reg*W1
+        grads["b1"] = np.sum(grads2,axis=0)
         pass
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -163,6 +202,16 @@ class FullyConnectedNet(object):
         # beta2, etc. Scale parameters should be initialized to one and shift      #
         # parameters should be initialized to zero.                                #
         ############################################################################
+        self.params['W1'] = np.random.randn(input_dim,hidden_dims[0])*weight_scale
+        self.params['b1'] = np.zeros(hidden_dims[0])
+
+        for i in (len(hidden_dims)-2) :
+          self.params['W'+str(i+2)] = np.random.randn(hidden_dims[i],hidden_dims[i+1])*weight_scale
+          self.params['b'+str(i+2)] = np.random.randn(hidden_dims[i+1])
+        
+        self.params['W'+str(len(hidden_dims)+1)] = np.random.randn(hidden_dims[len(hidden_dims)-1],hidden_dims[len(hidden_dims)])*weight_scale
+        self.params['b'+str(len(hidden_dims)+1)] = np.random.randn(hidden_dims[len(hidden_dims)-1])
+
         pass
         ############################################################################
         #                             END OF YOUR CODE                             #

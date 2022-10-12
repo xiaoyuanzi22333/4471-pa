@@ -26,7 +26,7 @@ def affine_forward(x, w, b):
     # will need to reshape the input into rows.                               #
     ###########################################################################
     num = x.shape[0]
-    out = np.dot(x.reshape(num),w)+b
+    out = np.dot(x.reshape(num,-1),w)+b
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -55,6 +55,9 @@ def affine_backward(dout, cache):
     ###########################################################################
     # TODO: Implement the affine backward pass.                               #
     ###########################################################################
+    dx = np.dot(dout,w.T).reshape(x.shape)
+    dw = np.dot(x.reshape(x.shape[0],-1).T,dout)
+    db = np.sum(dout,axis=0)
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -77,6 +80,7 @@ def relu_forward(x):
     ###########################################################################
     # TODO: Implement the ReLU forward pass.                                  #
     ###########################################################################
+    out = np.maximum(0,x)
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -100,6 +104,9 @@ def relu_backward(dout, cache):
     ###########################################################################
     # TODO: Implement the ReLU backward pass.                                 #
     ###########################################################################
+    model = np.zeros(x.shape)
+    model[x>0] = 1
+    dx = dout*model
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
