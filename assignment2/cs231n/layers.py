@@ -1,4 +1,7 @@
 from builtins import range
+from cmath import sqrt
+from random import sample
+from statistics import mean
 import numpy as np
 
 
@@ -234,10 +237,17 @@ def batchnorm_backward(dout, cache):
     # TODO: Implement the backward pass for batch normalization. Store the    #
     # results in the dx, dgamma, and dbeta variables.                         #
     ###########################################################################
-    (x, x_norm, sample_mean, sample_var, gamma, eps) = cache
-    dgamma = np.sum(dout*x_norm,axis=0)
-    dbeta = np.sum(dout,axis=0)
-    
+    (x, x_norm, mean, var, gama, eps) = cache
+    N = x.shape[0]
+    # (D,)
+    dbeta = np.sum(dout, axis=0)
+    # (D,)
+    dgamma = np.sum(x_norm * dout, axis=0)
+    # (N,D)
+    dx_norm = gama * dout
+    dvar = -0.5*np.sum(dx_norm*(x-mean), axis=0) / ((var+eps)**1.5)
+    dmean = -np.sum(dx_norm, axis=0)/np.sqrt(var+eps) - 2 * dvar * np.sum(x-mean, axis=0) / N
+    dx = dx_norm/np.sqrt(var + eps) + dvar * 2 * (x-mean) / N + dmean / N
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -307,7 +317,7 @@ def dropout_forward(x, dropout_param):
         # TODO: Implement training phase forward pass for inverted dropout.   #
         # Store the dropout mask in the mask variable.                        #
         #######################################################################
-        mask = (np.ramdom.randn(*x.shape) <(1-p))/1-p
+        mask = (np.ramdom.randn(*x.shape) <p)/p
         out *= mask
         pass
         #######################################################################
@@ -345,6 +355,7 @@ def dropout_backward(dout, cache):
         #######################################################################
         # TODO: Implement training phase backward pass for inverted dropout   #
         #######################################################################
+        dx = dout*mask
         pass
         #######################################################################
         #                          END OF YOUR CODE                           #

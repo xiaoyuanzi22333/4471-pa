@@ -216,7 +216,7 @@ class FullyConnectedNet(object):
           self.params['gamma1'] = np.ones(hidden_dims[0])
           self.params['beta1'] = np.zeros(hidden_dims[0])
 
-        for i in range(len(hidden_dims)-2) :
+        for i in range(self.num_layers-2) :
           self.params['W'+str(i+2)] = np.random.randn(hidden_dims[i],hidden_dims[i+1])*weight_scale
           self.params['b'+str(i+2)] = np.random.randn(hidden_dims[i+1])
           if use_batchnorm == True:
@@ -286,24 +286,27 @@ class FullyConnectedNet(object):
         ############################################################################
         length = self.num_layers
         forward_score = range(length+1)
-        forward_score[0] = X
+        forward_score = X
         cache = {}
+        ap_cache = {}
         dp_cache = {}
+        re_cache = {}
         for i in range(length):   #from 0 to length-1
           w = self.params['W'+str(i+1)]
           b = self.params['b'+str(i+1)]
 
           if i == length-1:       #the last layer output
-            forward_score[i+1],cache[i] = affine_forward(forward_score[i],w,b)
+            forward_score,ap_cache[i+1] = affine_forward(forward_score,w,b)
           else:
-            forward_score[i+1],cache[i] = affine_forward(forward_score[i],w,b)
+            forward_score,ap_cache[i+1] = affine_forward(forward_score,w,b)
             if self.use_batchnorm == True:    #checkout norm
               gamma = self.params['gamma'+str(i+1)]
               beta = self.params['beta'+str(i+1)]
-              forward_score[i+1],cache[i] = batchnorm_forward(forward_score[i],w,b,gamma,beta,self.bn_params[i])
-            forward_score[i+1],cache[i] = relu_forward(forward_score[i],w,b)
+              forward_score,cache[i+1] = batchnorm_forward(forward_score,w,b,gamma,beta,self.bn_params[i])
+            forward_score,re_cache[i+1] = relu_forward(forward_score)
             if self.use_dropout == True:      #checkout dropout
-              forward_score[i+1],dp_cache[i] = dropout_forward(forward_score[i+1],self.dropout_param['mode'])
+              forward_score,dp_cache[i+1] = dropout_forward(forward_score,self.dropout_param['mode'])
+        scores = forward_score
         pass
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -327,9 +330,27 @@ class FullyConnectedNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        loss , grads[0] = softmax_loss(X,y)
-        for i in range(length-1,-1,-1):
-          if i == (length-1) :
+        loss , dout = softmax_loss(X,y)
+        #source back the first one
+        dx,self.params['W'+str(length)],self.params['b'+str(length)] = affine_backward(dout,cache[length])
+        loss += 0.5*self.reg*np.sum(self.params['W'+str(length)]*self.params['W']+str(length))
+        self.params['W'+str(length)] += self.reg*self.params['W'+str(length)]
+        for i in range(length-1,0,-1):
+          loss += 0.5*self.reg*np.sum(self.params['W'+str(i)]*self.params['W']+str(i))
+          if self.use_dropout == True:  #checkout drop out
+            dx = dropout_backward(dx,cache[i])
+
+          #checkout relu backward
+          dx = relu_backward(dx,re_cache[i])
+
+          if self.use_batchnorm == True:  #checkout normalization
+            dx,grads['gamma'+str(i)],grads['beta'+str(i)] = batchnorm_backward(dx,cache[i])
+
+          # checkout affine backward
+          dx,grads['W'+str(i)],grads['b'+str(i)] = affine_backward(dx,ap_cache[i])
+
+          #add regularization
+          grads['W'+str(i)] += self.reg*grads['W'+str(i)]
 
         pass
         ############################################################################
