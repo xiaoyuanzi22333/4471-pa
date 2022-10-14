@@ -1,0 +1,8 @@
+gradient of batch normalization
+https://kratzert.github.io/2016/02/12/understanding-the-gradient-flow-through-the-batch-normalization-layer.html
+
+gradient of SVM loss function
+https://intellipaat.com/community/18478/compute-the-gradient-of-the-svm-loss-function
+
+gradient of softmax function
+https://mlxai.github.io/2017/01/09/implementing-softmax-classifier-with-vectorized-operations.html
