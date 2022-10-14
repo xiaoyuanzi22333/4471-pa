@@ -224,7 +224,7 @@ class FullyConnectedNet(object):
             self.params['beta'+str(i+2)] = np.zeros(hidden_dims[i+1])
         
         self.params['W'+str(len(hidden_dims)+1)] = np.random.randn(hidden_dims[len(hidden_dims)-1],num_classes)*weight_scale
-        self.params['b'+str(len(hidden_dims)+1)] = np.random.randn(hidden_dims[len(hidden_dims)-1])
+        self.params['b'+str(len(hidden_dims)+1)] = np.random.randn(num_classes)
 
         pass
         ############################################################################
@@ -295,16 +295,19 @@ class FullyConnectedNet(object):
           w = self.params['W'+str(i+1)]
           b = self.params['b'+str(i+1)]
 
-          if i == length-1:       #the last layer output
+          if i == length-1:       #the last layer output --- ap_cache
             forward_score,ap_cache[i+1] = affine_forward(forward_score,w,b)
           else:
             forward_score,ap_cache[i+1] = affine_forward(forward_score,w,b)
-            if self.use_batchnorm == True:    #checkout norm
+            if self.use_batchnorm == True:    #checkout norm --- cache
               gamma = self.params['gamma'+str(i+1)]
               beta = self.params['beta'+str(i+1)]
               forward_score,cache[i+1] = batchnorm_forward(forward_score,w,b,gamma,beta,self.bn_params[i])
+
+            #checkout relu --- re_cache
             forward_score,re_cache[i+1] = relu_forward(forward_score)
-            if self.use_dropout == True:      #checkout dropout
+
+            if self.use_dropout == True:      #checkout dropout --- dp_cache
               forward_score,dp_cache[i+1] = dropout_forward(forward_score,self.dropout_param['mode'])
         scores = forward_score
         pass
@@ -330,15 +333,15 @@ class FullyConnectedNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        loss , dout = softmax_loss(X,y)
+        loss , dout = softmax_loss(scores,y)
         #source back the first one
-        dx,self.params['W'+str(length)],self.params['b'+str(length)] = affine_backward(dout,cache[length])
-        loss += 0.5*self.reg*np.sum(self.params['W'+str(length)]*self.params['W']+str(length))
+        dx,self.params['W'+str(length)],self.params['b'+str(length)] = affine_backward(dout,ap_cache[length])
+        loss += 0.5*self.reg*np.sum(self.params['W'+str(length)]*self.params['W'+str(length)])
         self.params['W'+str(length)] += self.reg*self.params['W'+str(length)]
         for i in range(length-1,0,-1):
-          loss += 0.5*self.reg*np.sum(self.params['W'+str(i)]*self.params['W']+str(i))
+          loss += 0.5*self.reg*np.sum(self.params['W'+str(i)]*self.params['W'+str(i)])
           if self.use_dropout == True:  #checkout drop out
-            dx = dropout_backward(dx,cache[i])
+            dx = dropout_backward(dx,dp_cache[i])
 
           #checkout relu backward
           dx = relu_backward(dx,re_cache[i])
