@@ -1,5 +1,6 @@
 from builtins import range
 from builtins import object
+from math import gamma
 import numpy as np
 
 from cs231n.layers import *
@@ -168,17 +169,24 @@ class FullyConnectedNet(object):
 
         Inputs:
         - hidden_dims: A list of integers giving the size of each hidden layer.
+
         - input_dim: An integer giving the size of the input.
+
         - num_classes: An integer giving the number of classes to classify.
+
         - dropout: Scalar between 0 and 1 giving dropout strength. If dropout=0 then
           the network should not use dropout at all.
+
         - use_batchnorm: Whether or not the network should use batch normalization.
         - reg: Scalar giving L2 regularization strength.
+
         - weight_scale: Scalar giving the standard deviation for random
           initialization of the weights.
+
         - dtype: A numpy datatype object; all computations will be performed using
           this datatype. float32 is faster but less accurate, so you should use
           float64 for numeric gradient checking.
+
         - seed: If not None, then pass this random seed to the dropout layers. This
           will make the dropout layers deteriminstic so we can gradient check the
           model.
@@ -204,12 +212,18 @@ class FullyConnectedNet(object):
         ############################################################################
         self.params['W1'] = np.random.randn(input_dim,hidden_dims[0])*weight_scale
         self.params['b1'] = np.zeros(hidden_dims[0])
+        if use_batchnorm == True:
+          self.params['gamma1'] = np.ones(hidden_dims[0])
+          self.params['beta1'] = np.zeros(hidden_dims[0])
 
-        for i in (len(hidden_dims)-2) :
+        for i in range(len(hidden_dims)-2) :
           self.params['W'+str(i+2)] = np.random.randn(hidden_dims[i],hidden_dims[i+1])*weight_scale
           self.params['b'+str(i+2)] = np.random.randn(hidden_dims[i+1])
+          if use_batchnorm == True:
+            self.params['gamma'+str(i+2)] = np.ones(hidden_dims[i+1])
+            self.params['beta'+str(i+2)] = np.zeros(hidden_dims[i+1])
         
-        self.params['W'+str(len(hidden_dims)+1)] = np.random.randn(hidden_dims[len(hidden_dims)-1],hidden_dims[len(hidden_dims)])*weight_scale
+        self.params['W'+str(len(hidden_dims)+1)] = np.random.randn(hidden_dims[len(hidden_dims)-1],num_classes)*weight_scale
         self.params['b'+str(len(hidden_dims)+1)] = np.random.randn(hidden_dims[len(hidden_dims)-1])
 
         pass
@@ -270,6 +284,26 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
+        length = self.num_layers
+        forward_score = range(length+1)
+        forward_score[0] = X
+        cache = {}
+        dp_cache = {}
+        for i in range(length):   #from 0 to length-1
+          w = self.params['W'+str(i+1)]
+          b = self.params['b'+str(i+1)]
+
+          if i == length-1:       #the last layer output
+            forward_score[i+1],cache[i] = affine_forward(forward_score[i],w,b)
+          else:
+            forward_score[i+1],cache[i] = affine_forward(forward_score[i],w,b)
+            if self.use_batchnorm == True:    #checkout norm
+              gamma = self.params['gamma'+str(i+1)]
+              beta = self.params['beta'+str(i+1)]
+              forward_score[i+1],cache[i] = batchnorm_forward(forward_score[i],w,b,gamma,beta,self.bn_params[i])
+            forward_score[i+1],cache[i] = relu_forward(forward_score[i],w,b)
+            if self.use_dropout == True:      #checkout dropout
+              forward_score[i+1],dp_cache[i] = dropout_forward(forward_score[i+1],self.dropout_param['mode'])
         pass
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -293,6 +327,10 @@ class FullyConnectedNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
+        loss , grads[0] = softmax_loss(X,y)
+        for i in range(length-1,-1,-1):
+          if i == (length-1) :
+
         pass
         ############################################################################
         #                             END OF YOUR CODE                             #
