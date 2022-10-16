@@ -104,3 +104,18 @@ def conv_relu_pool_backward(dout, cache):
     da = relu_backward(ds, relu_cache)
     dx, dw, db = conv_backward_fast(da, conv_cache)
     return dx, dw, db
+
+
+#add my own functions:
+
+def batchnorm_relu_forward(x,gamma,beta,bn_param):
+    batchnorm_out,batchnorm_cache = batchnorm_forward(x,gamma,beta,bn_param)
+    out,relu_cache=relu_forward(batchnorm_out)
+    cache=(batchnorm_cache,relu_cache)
+    return out,cache
+
+def batchnorm_relu_backward(dout,cache):
+    batchnorm_cache,relu_cache=cache
+    da=relu_backward(dout,relu_cache)
+    dx,dgamma,dbeta=batchnorm_backward(da,batchnorm_cache)
+    return dx,dgamma,dbeta
