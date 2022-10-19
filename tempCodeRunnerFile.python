@@ -1,6 +1,5 @@
 import numpy as np
 
-k = [1,24,35]
-
-for i in range(len(k)-1,-1,-1):
-    print(i)
+x = np.array([1,2,3])
+x = x[:,np.newaxis,np.newaxis]
+print(x)

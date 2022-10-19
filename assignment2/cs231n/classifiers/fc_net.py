@@ -130,11 +130,8 @@ class TwoLayerNet(object):
         mode = np.zeros(scores_1.shape)
         mode[scores_1 > 0] = 1
         grads2 = grad1re*mode
-
-
         
         grads["W1"] = np.dot(X.reshape(X.shape[0],-1).T,grads2)
-        print(grads['W1'].shape)
         grads["W1"] += reg*W1
         grads["b1"] = np.sum(grads2,axis=0)
         pass
