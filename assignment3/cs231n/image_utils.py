@@ -5,7 +5,10 @@ from builtins import range
 import urllib.request, urllib.error, urllib.parse, os, tempfile
 
 import numpy as np
-from scipy.misc import imread, imresize
+from PIL import Image
+import numpy as np
+
+from imageio import imread
 
 """
 Utility functions used for viewing and processing images.
@@ -64,7 +67,11 @@ def image_from_url(url):
         with open(fname, 'wb') as ff:
             ff.write(f.read())
         img = imread(fname)
-        os.remove(fname)
+        try:
+            os.remove(fname)
+        except:
+            pass
+        
         return img
     except urllib.error.URLError as e:
         print('URL Error: ', e.reason, url)
@@ -85,5 +92,5 @@ def load_image(filename, size=None):
         min_idx = np.argmin(orig_shape)
         scale_factor = float(size) / orig_shape[min_idx]
         new_shape = (orig_shape * scale_factor).astype(int)
-        img = imresize(img, scale_factor)
+        img = np.array(Image.fromarray(img).resize(scale_factor))
     return img

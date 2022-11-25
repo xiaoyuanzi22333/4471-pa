@@ -149,6 +149,8 @@ class CaptioningSolver(object):
 
         # Compute loss and gradient
         loss, grads = self.model.loss(features, captions)
+        # print(captions.shape)
+        # print(features.shape)
         self.loss_history.append(loss)
 
         # Perform a parameter update
@@ -180,27 +182,27 @@ class CaptioningSolver(object):
         return 0.0
 
         # Maybe subsample the data
-        N = X.shape[0]
-        if num_samples is not None and N > num_samples:
-            mask = np.random.choice(N, num_samples)
-            N = num_samples
-            X = X[mask]
-            y = y[mask]
+        # N = X.shape[0]
+        # if num_samples is not None and N > num_samples:
+        #     mask = np.random.choice(N, num_samples)
+        #     N = num_samples
+        #     X = X[mask]
+        #     y = y[mask]
 
-        # Compute predictions in batches
-        num_batches = N / batch_size
-        if N % batch_size != 0:
-            num_batches += 1
-        y_pred = []
-        for i in range(num_batches):
-            start = i * batch_size
-            end = (i + 1) * batch_size
-            scores = self.model.loss(X[start:end])
-            y_pred.append(np.argmax(scores, axis=1))
-        y_pred = np.hstack(y_pred)
-        acc = np.mean(y_pred == y)
+        # # Compute predictions in batches
+        # num_batches = N / batch_size
+        # if N % batch_size != 0:
+        #     num_batches += 1
+        # y_pred = []
+        # for i in range(num_batches):
+        #     start = i * batch_size
+        #     end = (i + 1) * batch_size
+        #     scores = self.model.loss(X[start:end])
+        #     y_pred.append(np.argmax(scores, axis=1))
+        # y_pred = np.hstack(y_pred)
+        # acc = np.mean(y_pred == y)
 
-        return acc
+        # return acc
 
 
     def train(self):
